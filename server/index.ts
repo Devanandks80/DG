@@ -47,25 +47,29 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Only setup Vite in development
+  // Use Vite middleware in development, otherwise serve static files
   if (app.get("env") === "development") {
     await setupVite(app, server);
+
+    // Start listening locally only in development
+    const port = parseInt(process.env.PORT || "5000", 10);
+    const isWindows = process.platform === "win32";
+    server.listen(
+      {
+        port,
+        host: isWindows ? "127.0.0.1" : "0.0.0.0",
+        ...(isWindows ? {} : { reusePort: true }),
+      },
+      () => {
+        log(`Serving on http://${isWindows ? "127.0.0.1" : "0.0.0.0"}:${port}`);
+      }
+    );
   } else {
+    // In production, serve built static files
     serveStatic(app);
+    // IMPORTANT: do NOT call server.listen() here
+    // Export the app for Vercel or other serverless environments
   }
-
-  // Port logic (default to 5000 if not set)
-  const port = parseInt(process.env.PORT || "5000", 10);
-
-  // Detect OS to avoid ENOTSUP on Windows
-  const isWindows = process.platform === "win32";
-
-  // Cross-platform listen
-  server.listen({
-    port,
-    host: isWindows ? "127.0.0.1" : "0.0.0.0",
-    ...(isWindows ? {} : { reusePort: true }),
-  }, () => {
-    log(`Serving on http://${isWindows ? "127.0.0.1" : "0.0.0.0"}:${port}`);
-  });
 })();
+
+export default app;
