@@ -1,0 +1,429 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Mosquito Pet - Interactive Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'orbitron': ['Orbitron', 'monospace'],
+                        'roboto': ['Roboto', 'sans-serif'],
+                    },
+                    colors: {
+                        'mosquito-dark': '#0f0f0f',
+                        'mosquito-charcoal': '#1a1a1a',
+                        'mosquito-green': '#2d4a2b',
+                        'mosquito-yellow': '#f4d03f',
+                        'mosquito-gray': '#666666',
+                        'mosquito-wing': '#4a4a4a',
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'buzz': 'buzz 0.1s ease-in-out infinite',
+                        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes buzz {
+            0%, 100% { transform: translateX(0px); }
+            25% { transform: translateX(-1px); }
+            75% { transform: translateX(1px); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px #f4d03f; }
+            50% { box-shadow: 0 0 20px #f4d03f, 0 0 30px #f4d03f; }
+        }
+        
+        .mosquito-cursor {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23f4d03f" stroke-width="2"><path d="M9 2l3 3-3 3"/><path d="M22 9l-3 3 3 3"/><path d="M2 9l3 3-3 3"/><path d="M15 2l-3 3 3 3"/></svg>'), auto;
+        }
+        
+        canvas {
+            background: radial-gradient(circle at center, #1a1a1a 0%, #0f0f0f 100%);
+        }
+    </style>
+</head>
+<body class="bg-mosquito-dark font-roboto text-white overflow-hidden">
+    <!-- @COMPONENT: MainGameInterface -->
+    <div class="relative h-screen w-screen overflow-hidden mosquito-cursor">
+        
+        <!-- Header Stats Panel -->
+        <!-- @COMPONENT: StatsHeader -->
+        <header class="absolute top-0 left-0 right-0 z-20 bg-mosquito-charcoal/90 backdrop-blur-sm border-b border-mosquito-wing/30">
+            <div class="flex items-center justify-between px-6 py-4">
+                <div class="flex items-center space-x-6">
+                    <h1 class="font-orbitron font-bold text-2xl text-mosquito-yellow">Virtual Mosquito Pet</h1>
+                    <div class="flex items-center space-x-4 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span data-bind="mosquitoCount" class="font-orbitron font-bold text-mosquito-yellow">1</span>
+                            <span class="text-gray-400">Active Mosquitoes</span>
+                        </div>
+                        <div class="h-4 w-px bg-mosquito-wing/50"></div>
+                        <div class="flex items-center space-x-2">
+                            <span data-bind="clickCount" class="font-orbitron text-green-400">0</span>
+                            <span class="text-gray-400">Total Clicks</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <!-- Sound Toggle -->
+                    <button 
+                        id="soundToggle" 
+                        data-event="click:toggleSound"
+                        class="p-2 rounded-lg bg-mosquito-green/50 hover:bg-mosquito-green transition-colors duration-200 border border-mosquito-wing/30"
+                        data-mock="true">
+                        <svg class="w-5 h-5 text-mosquito-yellow" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.776L4.636 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.636l3.747-3.776z" clip-rule="evenodd"/>
+                            <path d="M14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.895-4.21-2.343-5.657a1 1 0 010-1.414z"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Instructions Button -->
+                    <button 
+                        id="instructionsBtn"
+                        data-event="click:showInstructions" 
+                        class="px-4 py-2 rounded-lg bg-mosquito-wing/30 hover:bg-mosquito-wing/50 transition-colors duration-200 text-sm font-medium border border-mosquito-wing/30"
+                        data-mock="true">
+                        How to Play
+                    </button>
+                    
+                    <!-- Reset Button -->
+                    <button 
+                        id="resetBtn"
+                        data-event="click:resetGame" 
+                        class="px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 transition-colors duration-200 text-sm font-medium border border-red-600/30"
+                        data-mock="true">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </header>
+        <!-- @END_COMPONENT: StatsHeader -->
+
+        <!-- Main Game Canvas -->
+        <!-- @COMPONENT: GameCanvas -->
+        <canvas 
+            id="gameCanvas" 
+            class="absolute inset-0 w-full h-full"
+            data-implementation="Canvas for mosquito rendering and interaction">
+            <!-- @FUNCTIONALITY: This canvas should implement mosquito sprites with realistic flight patterns, cursor following, and click detection -->
+        </canvas>
+        <!-- @END_COMPONENT: GameCanvas -->
+
+        <!-- Performance Monitor (Bottom Left) -->
+        <!-- @COMPONENT: PerformancePanel -->
+        <div class="absolute bottom-4 left-4 z-20 bg-mosquito-charcoal/90 backdrop-blur-sm rounded-lg border border-mosquito-wing/30 p-4 min-w-48">
+            <h3 class="font-orbitron font-bold text-mosquito-yellow text-sm mb-2">Performance</h3>
+            <div class="space-y-1 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">FPS:</span>
+                    <span data-bind="fps" class="font-mono text-green-400">60</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Memory:</span>
+                    <span data-bind="memory" class="font-mono text-blue-400">12.4MB</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Particles:</span>
+                    <span data-bind="particles" class="font-mono text-yellow-400">0</span>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: PerformancePanel -->
+
+        <!-- Game Controls (Bottom Right) -->
+        <!-- @COMPONENT: GameControls -->
+        <div class="absolute bottom-4 right-4 z-20 bg-mosquito-charcoal/90 backdrop-blur-sm rounded-lg border border-mosquito-wing/30 p-4">
+            <h3 class="font-orbitron font-bold text-mosquito-yellow text-sm mb-3">Controls</h3>
+            <div class="space-y-2">
+                <button 
+                    id="spawnBtn"
+                    data-event="click:spawnMosquito"
+                    class="w-full px-3 py-2 bg-mosquito-green hover:bg-mosquito-green/80 rounded-md text-sm font-medium transition-colors duration-200 border border-mosquito-wing/30"
+                    data-mock="true">
+                    Spawn Mosquito
+                </button>
+                <button 
+                    id="clearBtn"
+                    data-event="click:clearAllMosquitoes"
+                    class="w-full px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-md text-sm font-medium transition-colors duration-200 border border-red-600/30"
+                    data-mock="true">
+                    Clear All
+                </button>
+                <div class="pt-2 border-t border-mosquito-wing/30">
+                    <label class="block text-xs text-gray-400 mb-1">Speed Multiplier</label>
+                    <input 
+                        type="range" 
+                        id="speedSlider"
+                        min="0.5" 
+                        max="3" 
+                        step="0.1" 
+                        value="1"
+                        data-bind="speedMultiplier"
+                        class="w-full h-2 bg-mosquito-wing/30 rounded-lg appearance-none cursor-pointer slider"
+                        data-mock="true">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>0.5x</span>
+                        <span data-bind="currentSpeed">1.0x</span>
+                        <span>3.0x</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: GameControls -->
+
+        <!-- Instructions Modal -->
+        <!-- @COMPONENT: InstructionsModal -->
+        <div id="instructionsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div class="bg-mosquito-charcoal border border-mosquito-wing/30 rounded-xl p-8 max-w-lg mx-4 relative">
+                <button 
+                    id="closeModal"
+                    data-event="click:closeModal"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors duration-200"
+                    data-mock="true">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                
+                <h2 class="font-orbitron font-bold text-2xl text-mosquito-yellow mb-6">How to Play</h2>
+                
+                <div class="space-y-4 text-sm leading-relaxed">
+                    <div class="bg-mosquito-dark/50 p-4 rounded-lg border border-mosquito-wing/20">
+                        <h3 class="font-orbitron font-bold text-mosquito-yellow mb-2">Objective</h3>
+                        <p class="text-gray-300">Watch mosquitoes fly around your screen and interact with them. The goal is to create as many mosquitoes as possible!</p>
+                    </div>
+                    
+                    <div class="bg-mosquito-dark/50 p-4 rounded-lg border border-mosquito-wing/20">
+                        <h3 class="font-orbitron font-bold text-mosquito-yellow mb-2">Interactions</h3>
+                        <ul class="text-gray-300 space-y-1">
+                            <li>• <strong>Click</strong> a mosquito to make it multiply</li>
+                            <li>• Mosquitoes will <strong>follow your cursor</strong> when you get close</li>
+                            <li>• Each click spawns additional mosquitoes</li>
+                            <li>• Use the speed slider to control movement speed</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-mosquito-dark/50 p-4 rounded-lg border border-mosquito-wing/20">
+                        <h3 class="font-orbitron font-bold text-mosquito-yellow mb-2">Tips</h3>
+                        <ul class="text-gray-300 space-y-1">
+                            <li>• Watch the performance monitor to avoid lag</li>
+                            <li>• Use the reset button to start over</li>
+                            <li>• Toggle sound effects on/off as needed</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <button 
+                    id="startGame"
+                    data-event="click:startGame"
+                    class="w-full mt-6 px-4 py-3 bg-mosquito-green hover:bg-mosquito-green/80 rounded-lg font-orbitron font-bold text-mosquito-yellow transition-colors duration-200 border border-mosquito-wing/30"
+                    data-mock="true">
+                    Start Playing
+                </button>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: InstructionsModal -->
+
+        <!-- Loading Overlay -->
+        <!-- @COMPONENT: LoadingOverlay -->
+        <div id="loadingOverlay" class="absolute inset-0 z-30 bg-mosquito-dark flex items-center justify-center">
+            <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-mosquito-wing border-t-mosquito-yellow mb-4"></div>
+                <h2 class="font-orbitron font-bold text-2xl text-mosquito-yellow mb-2">Loading Virtual Mosquito Pet</h2>
+                <p class="text-gray-400 text-sm">Preparing your digital insect experience...</p>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: LoadingOverlay -->
+    </div>
+    <!-- @END_COMPONENT: MainGameInterface -->
+
+    <script>
+        // TODO: Implement mosquito game logic, canvas rendering, and interaction systems
+        
+        (function() {
+            // Game state management
+            let gameState = {
+                mosquitoes: [],
+                mousePosition: { x: 0, y: 0 },
+                clickCount: 0,
+                isPlaying: false,
+                soundEnabled: true,
+                speedMultiplier: 1.0
+            };
+
+            // Canvas setup
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            
+            // Initialize canvas
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Mock mosquito class structure
+            class Mosquito {
+                constructor(x, y) {
+                    this.x = x || Math.random() * canvas.width;
+                    this.y = y || Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.size = 3 + Math.random() * 2;
+                    this.angle = 0;
+                    // TODO: Add realistic flight pattern parameters
+                }
+
+                update() {
+                    // TODO: Implement erratic flight patterns
+                    // TODO: Add cursor following behavior
+                    // TODO: Apply speed multiplier
+                }
+
+                draw() {
+                    // TODO: Render mosquito sprite on canvas
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.angle);
+                    
+                    // Mock mosquito visualization
+                    ctx.fillStyle = '#666666';
+                    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                    
+                    ctx.restore();
+                }
+
+                isClicked(mouseX, mouseY) {
+                    // TODO: Implement click detection
+                    const distance = Math.sqrt((mouseX - this.x) ** 2 + (mouseY - this.y) ** 2);
+                    return distance < this.size + 5;
+                }
+            }
+
+            // Event handlers
+            document.getElementById('soundToggle').addEventListener('click', function() {
+                gameState.soundEnabled = !gameState.soundEnabled;
+                // TODO: Toggle sound system
+            });
+
+            document.getElementById('instructionsBtn').addEventListener('click', function() {
+                document.getElementById('instructionsModal').classList.remove('hidden');
+            });
+
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('instructionsModal').classList.add('hidden');
+            });
+
+            document.getElementById('startGame').addEventListener('click', function() {
+                document.getElementById('instructionsModal').classList.add('hidden');
+                startGame();
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                // TODO: Reset game state
+                gameState.mosquitoes = [];
+                gameState.clickCount = 0;
+                updateUI();
+            });
+
+            document.getElementById('spawnBtn').addEventListener('click', function() {
+                // TODO: Spawn new mosquito
+                gameState.mosquitoes.push(new Mosquito());
+                updateUI();
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', function() {
+                gameState.mosquitoes = [];
+                updateUI();
+            });
+
+            document.getElementById('speedSlider').addEventListener('input', function(e) {
+                gameState.speedMultiplier = parseFloat(e.target.value);
+                document.querySelector('[data-bind="currentSpeed"]').textContent = gameState.speedMultiplier.toFixed(1) + 'x';
+            });
+
+            canvas.addEventListener('click', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                // TODO: Check for mosquito clicks and handle multiplication
+                gameState.mosquitoes.forEach(mosquito => {
+                    if (mosquito.isClicked(mouseX, mouseY)) {
+                        gameState.clickCount++;
+                        // TODO: Multiply mosquito (spawn new ones)
+                        for (let i = 0; i < 2; i++) {
+                            gameState.mosquitoes.push(new Mosquito(mouseX, mouseY));
+                        }
+                    }
+                });
+                
+                updateUI();
+            });
+
+            canvas.addEventListener('mousemove', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                gameState.mousePosition.x = e.clientX - rect.left;
+                gameState.mousePosition.y = e.clientY - rect.top;
+            });
+
+            function updateUI() {
+                document.querySelector('[data-bind="mosquitoCount"]').textContent = gameState.mosquitoes.length;
+                document.querySelector('[data-bind="clickCount"]').textContent = gameState.clickCount;
+                
+                // TODO: Update performance metrics
+                document.querySelector('[data-bind="fps"]').textContent = '60';
+                document.querySelector('[data-bind="memory"]').textContent = '12.4MB';
+                document.querySelector('[data-bind="particles"]').textContent = gameState.mosquitoes.length;
+            }
+
+            function gameLoop() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Update and draw mosquitoes
+                gameState.mosquitoes.forEach(mosquito => {
+                    mosquito.update();
+                    mosquito.draw();
+                });
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            function startGame() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                gameState.isPlaying = true;
+                
+                // Spawn initial mosquito
+                gameState.mosquitoes.push(new Mosquito());
+                updateUI();
+                
+                // Start game loop
+                gameLoop();
+            }
+
+            // Initialize game after short delay
+            setTimeout(() => {
+                startGame();
+            }, 2000);
+
+        })();
+    </script>
+</body>
+</html>
